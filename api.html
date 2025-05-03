@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game - Silicon Sutras</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    
+    .game-wrapper {
+      background-color: #f8f9fa;
+      padding: 20px;
+      border-radius: 12px;
+      margin: 20px 0;
+      font-family: monospace;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    h1, h2 {
+      text-align: center;
+      color: #444;
+    }
+    
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 5px;
+    }
+    
+    .header-quote {
+      text-align: center;
+      font-style: italic;
+      margin-bottom: 30px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+      color: #666;
+    }
+    
+    #game-container {
+      width: 100%;
+      max-width: 600px;
+      height: 300px;
+      margin: 0 auto;
+      position: relative;
+      overflow: hidden;
+      background-color: #f0f0f0;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      box-shadow: inset 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    #player {
+      position: absolute;
+      bottom: 0;
+      left: 50px;
+      width: 40px;
+      height: 40px;
+      font-size: 32px;
+      line-height: 1;
+      text-align: center;
+      z-index: 10;
+      transition: transform 0.3s;
+    }
+    
+    #ground {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 20px;
+      background: linear-gradient(to right, #333, #444);
+    }
+    
+    .obstacle {
+      transition: opacity 0.3s;
+    }
+    
+    .footer {
+      text-align: center;
+      margin-top: 40px;
+      font-size: 14px;
+      color: #666;
+    }
+    
+    .footer a {
+      color: #555;
+      text-decoration: none;
+      border-bottom: 1px solid #999;
+      transition: all 0.2s;
+    }
+    
+    .footer a:hover {
+      color: #333;
+      border-bottom: 2px solid #666;
+    }
+    
+    .instructions {
+      text-align: center;
+      margin: 20px 0;
+      background-color: rgba(255,255,255,0.7);
+      padding: 10px;
+      border-radius: 8px;
+    }
+    
+    #start-button, #restart-button {
+      padding: 10px 20px;
+      margin: 10px auto;
+      background-color: #4285f4;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      display: block;
+      font-weight: bold;
+      transition: background-color 0.2s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    #start-button:hover, #restart-button:hover {
+      background-color: #3367d6;
+    }
+    
+    #power-menu {
+      display: none; 
+      position: absolute; 
+      top: 50%; 
+      left: 50%; 
+      transform: translate(-50%, -50%); 
+      background: white; 
+      border: 2px solid #4285f4; 
+      padding: 15px; 
+      border-radius: 8px; 
+      z-index: 15;
+      max-width: 80%;
+      max-height: 80%;
+      overflow-y: auto;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    
+    #power-options div {
+      transition: all 0.2s;
+    }
+    
+    #power-options div:hover {
+      background-color: #f0f7ff;
+      transform: translateX(3px);
+    }
+    
+    #score-container {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 18px;
+      z-index: 10;
+      background: rgba(255,255,255,0.8);
+      padding: 5px 10px;
+      border-radius: 5px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    #game-over {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      background: rgba(255,255,255,0.95);
+      padding: 20px;
+      border-radius: 8px;
+      z-index: 20;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      border: 2px solid #ddd;
+      min-width: 60%;
+    }
+  </style>
+</head>
+<body>
+  <div class="header-quote">
+    From the Silicon Sutras newsletter article "<a href="https://[your-substack-url]">Seeing Like an API</a>"
+  </div>
+  
+  <div class="game-wrapper">
+    <div id="game-container">
+      <div id="score-container">
+        <div>Points: <span id="score">0</span></div>
+        <div id="humanity-score" style="display: none;">Another Kind of Points: <span id="human-points">0</span></div>
+      </div>
+      
+      <div id="game-over">
+        <h3 id="game-over-text">GAME OVER</h3>
+        <p id="final-score"></p>
+        <p id="final-message"></p>
+        <button id="restart-button">Run Again</button>
+      </div>
+      
+      <div id="player">🤔</div>
+      
+      <div id="ground"></div>
+      
+      <div id="power-menu">
+        <h4 style="margin-top: 0;">Living Above the API</h4>
+        <div id="power-options"></div>
+      </div>
+    </div>
+    
+    <div class="instructions">
+      <p>Press SPACE to jump, P to pause and question the system</p>
+      <button id="start-button">Start Game</button>
+    </div>
+  </div>
+  
+  <div class="footer">
+    <p><a href="https://[your-substack-url]">Return to the full article</a></p>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // DOM elements
+      const gameContainer = document.getElementById('game-container');
+      const player = document.getElementById('player');
+      const scoreElement = document.getElementById('score');
+      const humanityElement = document.getElementById('human-points');
+      const humanityScoreDiv = document.getElementById('humanity-score');
+      const gameOver = document.getElementById('game-over');
+      const finalScore = document.getElementById('final-score');
+      const finalMessage = document.getElementById('final-message');
+      const restartButton = document.getElementById('restart-button');
+      const startButton = document.getElementById('start-button');
+      const powerMenu = document.getElementById('power-menu');
+      const powerOptions = document.getElementById('power-options');
+      
+      // Game state variables
+      let score = 0;
+      let humanityScore = 0;
+      let isJumping = false;
+      let isGameOver = false;
+      let isPaused = false;
+      let powerCooldown = 0;
+      let lastObstacleTime = 0;
+      let obstacles = [];
+      let animationFrameId = null;
+      let difficultyLevel = 1;
+      let difficultyTimer = null;
+      let easyModeActive = false;
+      let pointMultiplier = 1;
+      
+      // Game settings - all in one place for easy tuning
+      const settings = {
+        playerWidth: 40,
+        playerHeight: 50,
+        playerLeft: 50,
+        playerBottomStart: 20, // ground height
+        
+        obstacleWidth: 15,
+        obstacleHeight: 30,
+        obstacleMinGap: 1000, // ms between obstacles
+        obstacleSpeed: 5,
+        obstacleSpeedIncrement: 0.5, // speed increase per difficulty level
+        obstacleSpeedSlow: 2,
+        
+        maxDifficultyLevel: 10,
+        difficultyIncreaseInterval: 20000, // ms (20 seconds)
+        
+        jumpHeight: 200,
+        jumpDuration: 600, // ms
+        
+        gravity: 0.9,
+        powerCooldownDuration: 100,
+        powerDisplayDuration: 2000, // ms
+        
+        easyModeMultiplier: 0.5, // points earned in easy mode
+        
+        gameTickRate: 16 // ~ 60fps
+      };
+      
+      // Current player state
+      let playerState = {
+        bottom: settings.playerBottomStart,
+        jumpStartTime: 0,
+        jumpDuration: settings.jumpDuration
+      };
+      
+      // Game dimensions
+      const gameWidth = gameContainer.offsetWidth;
+      const gameHeight = gameContainer.offsetHeight;
+      
+      // API power options linked to the lessons - removed two options as requested
+      const powerUps = [
+        {
+          name: "Question the Form",
+          description: "Refuse to be standardized. Zap the next obstacle.",
+          effect: function() {
+            if (obstacles.length > 0) {
+              // Remove the closest obstacle
+              const removedObstacle = obstacles.shift();
+              removedObstacle.element.remove();
+              return "You rejected the system's constraints!";
+            }
+            return "No obstacles to zap.";
+          }
+        },
+        {
+          name: "Create Boundary",
+          description: "Take a rest. Slow down the game.",
+          effect: function() {
+            // Slow down game temporarily
+            settings.obstacleSpeed = settings.obstacleSpeedSlow;
+            setTimeout(() => { 
+              if (!isGameOver) {
+                settings.obstacleSpeed = 5;
+                // Force obstacle generation if none are visible
+                if (obstacles.length === 0) {
+                  scheduleNextObstacle();
+                }
+              }
+            }, 3000);
+            
+            return "You set your own pace! Game slowed for 3 seconds.";
+          }
+        },
+        {
+          name: "Value Unmeasurable",
+          description: "Change how success is measured. Gain another kind of points.",
+          effect: function() {
+            // Show humanity score
+            humanityScoreDiv.style.display = 'block';
+            // Gain humanity points
+            humanityScore += 50;
+            humanityElement.textContent = humanityScore;
+            return "You've valued what can't be measured! +50 another kind of points.";
+          }
+        }
+      ];
+      
+      // Start game
+      function startGame() {
+        resetGame();
+        
+        // Start game loop with requestAnimationFrame
+        lastFrameTime = Date.now();
+        gameLoop();
+        
+        // Schedule first obstacle
+        lastObstacleTime = Date.now();
+        scheduleNextObstacle();
+        
+        // Start difficulty progression
+        startDifficultyProgression();
+        
+        // Hide start button
+        startButton.style.display = 'none';
+      }
+      
+      // Main game loop
+      function gameLoop() {
+        if (isGameOver || isPaused) return;
+        
+        // Calculate delta time for smooth animation regardless of frame rate
+        const now = Date.now();
+        const deltaTime = now - lastFrameTime;
+        lastFrameTime = now;
+        
+        updateGame(deltaTime);
+        
+        // Schedule next frame
+        animationFrameId = requestAnimationFrame(gameLoop);
+      }
+      
+      // Reset game state
+      function resetGame() {
+        // Cancel any existing animation frame
+        if (animationFrameId) {
+          cancelAnimationFrame(animationFrameId);
+        }
+        
+        // Cancel difficulty timer
+        if (difficultyTimer) {
+          clearInterval(difficultyTimer);
+        }
+        
+        // Reset variables
+        score = 0;
+        humanityScore = 0;
+        isGameOver = false;
+        isJumping = false;
+        isPaused = false;
+        powerCooldown = 0;
+        lastFrameTime = Date.now();
+        difficultyLevel = 1;
+        easyModeActive = false;
+        pointMultiplier = 1;
+        
+        // Reset player state
+        playerState = {
+          bottom: settings.playerBottomStart,
+          jumpStartTime: 0,
+          jumpDuration: settings.jumpDuration
+        };
+        
+        // Reset game settings
+        settings.obstacleSpeed = 5;
+        
+        // Reset visual indications
+        gameContainer.style.boxShadow = 'inset 0 2px 10px rgba(0,0,0,0.05)';
+        
+        // Clear existing obstacles
+        obstacles.forEach(obs => obs.element.remove());
+        obstacles = [];
+        
+        // Reset player position
+        player.style.bottom = `${playerState.bottom}px`;
+        
+        // Reset display
+        scoreElement.textContent = score;
+        humanityElement.textContent = humanityScore;
+        humanityScoreDiv.style.display = 'none';
+        gameOver.style.display = 'none';
+      }
+      
+      // Handle jump action
+      function jump() {
+        if (!isJumping && !isGameOver && !isPaused) {
+          isJumping = true;
+          playerState.jumpStartTime = Date.now();
+          player.style.transform = 'scale(1.2)'; // Scale up instead of color change
+          
+          setTimeout(() => {
+            if (!isGameOver) player.style.transform = 'scale(1)';
+          }, settings.jumpDuration);
+        }
+      }
+      
+      // Update jump position based on time curve
+      function updateJump() {
+        if (!isJumping) return;
+        
+        const jumpTime = Date.now() - playerState.jumpStartTime;
+        const jumpProgress = jumpTime / playerState.jumpDuration;
+        
+        // Complete jump
+        if (jumpProgress >= 1) {
+          isJumping = false;
+          playerState.bottom = settings.playerBottomStart;
+          return;
+        }
+        
+        // Simple parabola: y = 4 * h * t * (1 - t) where t ranges from 0 to 1
+        // This gives a smooth arc that starts and ends at 0
+        const height = 4 * settings.jumpHeight * jumpProgress * (1 - jumpProgress);
+        playerState.bottom = settings.playerBottomStart + height;
+      }
+      
+      // Create a new obstacle
+      function createObstacle() {
+        if (isGameOver || isPaused) return;
+        
+        // Create obstacle element
+        const obstacle = document.createElement('div');
+        obstacle.classList.add('obstacle');
+        const obstacleType = Math.random() > 0.7 ? '📊' : '🔒';
+        obstacle.textContent = obstacleType;
+        obstacle.style.position = 'absolute';
+        obstacle.style.right = '0';
+        obstacle.style.bottom = `${settings.playerBottomStart}px`;
+        obstacle.style.width = `${settings.obstacleWidth}px`;
+        obstacle.style.height = `${settings.obstacleHeight}px`;
+        obstacle.style.fontSize = '20px';
+        obstacle.style.textAlign = 'center';
+        obstacle.style.filter = 'drop-shadow(0 2px 2px rgba(0,0,0,0.2))';
+        
+        gameContainer.appendChild(obstacle);
+        
+        // Add to obstacles array
+        obstacles.push({
+          element: obstacle,
+          position: 0,
+          isUncertain: false
+        });
+        
+        lastObstacleTime = Date.now();
+        
+        // Schedule next obstacle
+        scheduleNextObstacle();
+      }
+      
+      // Schedule next obstacle with random timing
+      function scheduleNextObstacle() {
+        if (isGameOver || isPaused) return;
+        
+        const minTime = 800;
+        const varTime = 1200;
+        const randomTime = Math.floor(Math.random() * varTime) + minTime;
+        
+        setTimeout(createObstacle, randomTime);
+      }
+      
+      // Update game state
+      function updateGame(deltaTime) {
+        if (isGameOver || isPaused) return;
+        
+        // Increase score based on point multiplier
+        score += Math.round(pointMultiplier);
+        scoreElement.textContent = score;
+        
+        // Update jump position
+        updateJump();
+        player.style.bottom = `${playerState.bottom}px`;
+        
+        // Move obstacles - speed adjusts based on difficulty
+        for (let i = 0; i < obstacles.length; i++) {
+          // Move based on obstacle speed and delta time for smooth motion
+          const moveDistance = (settings.obstacleSpeed / 16) * deltaTime;
+          obstacles[i].position += moveDistance;
+          obstacles[i].element.style.right = `${obstacles[i].position}px`;
+          
+          // Check collision
+          if (checkCollision(obstacles[i])) {
+            if (obstacles[i].isUncertain && Math.random() > 0.5) {
+              // 50% chance uncertain obstacles don't hurt
+              obstacles[i].element.style.opacity = '0.3';
+              humanityScore += 10;
+              humanityElement.textContent = humanityScore;
+            } else {
+              endGame();
+              return;
+            }
+          }
+          
+          // Remove off-screen obstacles
+          if (obstacles[i].position > gameWidth + 50) {
+            obstacles[i].element.remove();
+            obstacles.splice(i, 1);
+            i--;
+          }
+        }
+        
+        // Decrease power cooldown
+        if (powerCooldown > 0) powerCooldown--;
+      }
+      
+      // Improved collision detection
+      function checkCollision(obstacle) {
+        // Get obstacle position
+        const obstacleRight = parseFloat(obstacle.element.style.right);
+        const obstacleLeft = gameWidth - obstacleRight - settings.obstacleWidth;
+        
+        // Player hitbox (slightly smaller than visual)
+        const playerHitboxWidth = settings.playerWidth * 0.8;
+        const playerHitboxLeft = settings.playerLeft + (settings.playerWidth * 0.1);
+        const playerHitboxRight = playerHitboxLeft + playerHitboxWidth;
+        
+        // Check horizontal overlap
+        if (playerHitboxRight < obstacleLeft || playerHitboxLeft > obstacleLeft + settings.obstacleWidth) {
+          return false; // No horizontal overlap
+        }
+        
+        // Check if player is jumping over obstacle
+        const playerBottom = playerState.bottom;
+        if (playerBottom > settings.obstacleHeight + 5) {
+          return false; // Player is jumping high enough
+        }
+        
+        return true; // Collision detected
+      }
+      
+      // Open power menu
+      function openPowerMenu() {
+        if (!isGameOver) {
+          isPaused = true;
+          powerMenu.style.display = 'block';
+          
+          // Clear previous options
+          powerOptions.innerHTML = '';
+          
+          // Add easy mode toggle option - always available
+          const easyModeOption = document.createElement('div');
+          easyModeOption.style.padding = '8px';
+          easyModeOption.style.margin = '5px 0';
+          easyModeOption.style.border = '1px solid #ddd';
+          easyModeOption.style.borderRadius = '4px';
+          easyModeOption.style.cursor = 'pointer';
+          easyModeOption.style.backgroundColor = easyModeActive ? '#e8f5e9' : '';
+          
+          const easyModeStatus = easyModeActive ? 'ON' : 'OFF';
+          easyModeOption.innerHTML = `<strong>Easy Mode (${easyModeStatus})</strong>: Make the game easier but earn fewer points.`;
+          
+          easyModeOption.addEventListener('click', () => {
+            const result = toggleEasyMode();
+            
+            // Close menu and resume game
+            powerMenu.style.display = 'none';
+            isPaused = false;
+            
+            // Show effect message
+            showMessage(result);
+            
+            // Ensure obstacle generation continues
+            ensureObstacleGeneration();
+            
+            // Resume game loop
+            lastFrameTime = Date.now(); // Reset time delta
+            gameLoop();
+          });
+          
+          powerOptions.appendChild(easyModeOption);
+          
+          // Add a separator
+          const separator = document.createElement('div');
+          separator.style.height = '1px';
+          separator.style.backgroundColor = '#ddd';
+          separator.style.margin = '10px 0';
+          powerOptions.appendChild(separator);
+          
+          // Create power options
+          powerUps.forEach(power => {
+            const option = document.createElement('div');
+            option.style.padding = '8px';
+            option.style.margin = '5px 0';
+            option.style.border = '1px solid #ddd';
+            option.style.borderRadius = '4px';
+            option.style.cursor = 'pointer';
+            
+            option.innerHTML = `<strong>${power.name}</strong>: ${power.description}`;
+            
+            option.addEventListener('click', () => {
+              const result = power.effect();
+              
+              // Close menu and resume game
+              powerMenu.style.display = 'none';
+              isPaused = false;
+              
+              // Set cooldown
+              powerCooldown = settings.powerCooldownDuration;
+              
+              // Show effect message
+              showMessage(result);
+              
+              // Ensure obstacle generation continues
+              ensureObstacleGeneration();
+              
+              // Resume game loop
+              lastFrameTime = Date.now(); // Reset time delta
+              gameLoop();
+            });
+            
+            powerOptions.appendChild(option);
+          });
+        }
+      }
+      
+      // Display a message in the game
+      function showMessage(text) {
+        const message = document.createElement('div');
+        message.textContent = text;
+        message.style.position = 'absolute';
+        message.style.top = '50%';
+        message.style.left = '50%';
+        message.style.transform = 'translate(-50%, -50%)';
+        message.style.background = 'rgba(255,255,255,0.9)';
+        message.style.padding = '12px 15px';
+        message.style.borderRadius = '8px';
+        message.style.zIndex = '15';
+        message.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+        message.style.border = '1px solid #ddd';
+        gameContainer.appendChild(message);
+        
+        setTimeout(() => {
+          message.remove();
+        }, settings.powerDisplayDuration);
+      }
+      
+      // End the game
+      function endGame() {
+        isGameOver = true;
+        
+        // Stop animation
+        if (animationFrameId) {
+          cancelAnimationFrame(animationFrameId);
+        }
+        
+        // Stop difficulty progression
+        if (difficultyTimer) {
+          clearInterval(difficultyTimer);
+        }
+        
+        // Show game over screen
+        gameOver.style.display = 'block';
+        finalScore.textContent = `Points: ${score}`;
+        
+        // Add difficulty level reached
+        finalScore.textContent += ` | Level: ${difficultyLevel}`;
+        
+        // Add humanity score if it was revealed
+        if (humanityScoreDiv.style.display !== 'none') {
+          finalScore.textContent += ` | Another Kind of Points: ${humanityScore}`;
+        }
+        
+        // Different messages based on score
+        if (humanityScore > score) {
+          finalMessage.textContent = "You found ways to live above the API! You valued what can't be measured.";
+        } else if (score > 1000) {
+          finalMessage.textContent = "You followed the system well, but at what cost?";
+        } else {
+          finalMessage.textContent = "Neither fully normalized nor fully sovereign. The balancing act continues.";
+        }
+        
+        // Show start button again
+        startButton.style.display = 'inline-block';
+      }
+      
+      // Helper function to ensure obstacles keep coming
+      function ensureObstacleGeneration() {
+        const timeSinceLastObstacle = Date.now() - lastObstacleTime;
+        if (timeSinceLastObstacle > 2000 || obstacles.length === 0) {
+          scheduleNextObstacle();
+        }
+      }
+      
+      // Helper function to resume game from pause
+      function resumeGameFromPause() {
+        powerMenu.style.display = 'none';
+        isPaused = false;
+        
+        // Ensure obstacle generation continues
+        ensureObstacleGeneration();
+        
+        // Reset time delta for smooth animation
+        lastFrameTime = Date.now();
+        gameLoop();
+      }
+      
+      // Start difficulty progression
+      function startDifficultyProgression() {
+        // Clear any existing timers
+        if (difficultyTimer) clearInterval(difficultyTimer);
+        
+        // Set up a timer to increase difficulty
+        difficultyTimer = setInterval(() => {
+          if (!isGameOver && !isPaused && !easyModeActive) {
+            increaseDifficulty();
+          }
+        }, settings.difficultyIncreaseInterval);
+      }
+      
+      // Increase game difficulty
+      function increaseDifficulty() {
+        if (difficultyLevel < settings.maxDifficultyLevel) {
+          difficultyLevel++;
+          
+          // Increase speed based on difficulty level
+          const newSpeed = settings.obstacleSpeed + 
+                          (settings.obstacleSpeedIncrement * (difficultyLevel - 1));
+          
+          // Only update if not in easy mode
+          if (!easyModeActive) {
+            settings.obstacleSpeed = newSpeed;
+          }
+          
+          // Show difficulty increase message
+          showMessage(`Level ${difficultyLevel}! Speed increasing!`);
+        }
+      }
+      
+      // Toggle easy mode
+      function toggleEasyMode() {
+        easyModeActive = !easyModeActive;
+        
+        if (easyModeActive) {
+          // Store current speed before reducing it
+          settings.previousSpeed = settings.obstacleSpeed;
+          settings.obstacleSpeed = settings.obstacleSpeedSlow;
+          pointMultiplier = settings.easyModeMultiplier;
+          
+          // Visual indication of easy mode
+          gameContainer.style.boxShadow = 'inset 0 0 20px rgba(76, 175, 80, 0.3)';
+          
+          return "Easy mode activated. Game is slower but you'll earn fewer points.";
+        } else {
+          // Restore speed but respect current difficulty level
+          const normalSpeed = settings.obstacleSpeed + 
+                             (settings.obstacleSpeedIncrement * (difficultyLevel - 1));
+          settings.obstacleSpeed = normalSpeed;
+          pointMultiplier = 1;
+          
+          // Remove visual indication
+          gameContainer.style.boxShadow = 'inset 0 2px 10px rgba(0,0,0,0.05)';
+          
+          return "Normal mode restored. Full points earned.";
+        }
+      }
+      
+      // Prevent page scrolling when using space bar
+      window.addEventListener('keydown', function(e) {
+        // Prevent spacebar scrolling
+        if (e.code === 'Space' && e.target === document.body) {
+          e.preventDefault();
+        }
+      });
+      
+      // Event listeners
+      document.addEventListener('keydown', function(event) {
+        // Jump with spacebar
+        if (event.code === 'Space') {
+          event.preventDefault();
+          if (!isGameOver && !isPaused) {
+            jump();
+          } else if (isGameOver) {
+            // Restart game if game over
+            startGame();
+          }
+        }
+        
+        // Open power menu with P key
+        if (event.code === 'KeyP') {
+          if (!isGameOver) {
+            openPowerMenu();
+          }
+        }
+      });
+      
+      // Cancel power menu with Escape key
+      document.addEventListener('keydown', function(event) {
+        if (event.code === 'Escape' && isPaused) {
+          resumeGameFromPause();
+        }
+      });
+      
+      // Mobile touch support
+      gameContainer.addEventListener('touchstart', function(e) {
+        e.preventDefault(); // Prevent scrolling
+        if (!isGameOver && !isPaused) {
+          jump();
+        } else if (isGameOver) {
+          startGame();
+        }
+      }, { passive: false });
+      
+      // Prevent game container from handling touch events if power menu is open
+      powerMenu.addEventListener('touchstart', function(e) {
+        e.stopPropagation();
+      });
+      
+      // Restart button
+      restartButton.addEventListener('click', function() {
+        startGame();
+      });
+      
+      // Start button
+      startButton.addEventListener('click', function() {
+        startGame();
+      });
+      
+      // Add a way to close power menu by touching outside it
+      document.addEventListener('click', function(e) {
+        if (isPaused && !powerMenu.contains(e.target) && e.target !== powerMenu) {
+          resumeGameFromPause();
+        }
+      });
+      
+      // Handle window blur/focus for better game pausing
+      window.addEventListener('blur', function() {
+        if (!isGameOver && !isPaused) {
+          isPaused = true;
+        }
+      });
+      
+      window.addEventListener('focus', function() {
+        if (!isGameOver && isPaused && powerMenu.style.display === 'none') {
+          resumeGameFromPause();
+        }
+      });
+      
+      // Initialize variables needed by gameLoop
+      let lastFrameTime = Date.now();
+    });
+  </script>
+</body>
+</html> 
