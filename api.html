@@ -137,7 +137,7 @@
       border: 2px solid #4285f4; 
       padding: 15px; 
       border-radius: 8px; 
-      z-index: 15;
+      z-index: 101;
       max-width: 80%;
       max-height: 80%;
       overflow-y: auto;
@@ -146,6 +146,7 @@
     
     #power-options div {
       transition: all 0.2s;
+      margin-bottom: 8px;
     }
     
     #power-options div:hover {
@@ -217,7 +218,7 @@
       </div>
       
       <!-- Pause button for mobile users -->
-      <div id="pause-button" ontouchstart="this.pauseClicked(event)">⚙️</div>
+      <div id="pause-button">⚙️</div>
       
       <div id="game-over">
         <h3 id="game-over-text">GAME OVER</h3>
@@ -248,6 +249,9 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function() {
+      // Log debug info
+      console.log("Game initialized with bug fixes v1.1");
+      
       // DOM elements
       const gameContainer = document.getElementById('game-container');
       const player = document.getElementById('player');
@@ -330,7 +334,10 @@
               removedObstacle.element.remove();
               return "You rejected the system's constraints!";
             }
-            return "No obstacles to zap.";
+            
+            // If no obstacles, schedule a new one so game doesn't stall
+            scheduleNextObstacle();
+            return "No obstacles to zap, but you're ready for the next one!";
           }
         },
         {
@@ -484,9 +491,15 @@
         playerState.bottom = settings.playerBottomStart + height;
       }
       
-      // Create a new obstacle
+      // Create a new obstacle - fix to check for paused state properly
       function createObstacle() {
-        if (isGameOver || isPaused) return;
+        if (isGameOver) return;
+        
+        // Don't create a new obstacle if paused, but reschedule for later
+        if (isPaused) {
+          setTimeout(createObstacle, 500);
+          return;
+        }
         
         // Create obstacle element
         const obstacle = document.createElement('div');
@@ -519,13 +532,17 @@
       
       // Schedule next obstacle with random timing
       function scheduleNextObstacle() {
-        if (isGameOver || isPaused) return;
+        if (isGameOver) return;
         
-        const minTime = 800;
-        const varTime = 1200;
+        const minTime = Math.max(800 - (difficultyLevel * 50), 400);
+        const varTime = Math.max(1200 - (difficultyLevel * 100), 600);
         const randomTime = Math.floor(Math.random() * varTime) + minTime;
         
-        setTimeout(createObstacle, randomTime);
+        setTimeout(function() {
+          if (!isGameOver) {
+            createObstacle();
+          }
+        }, randomTime);
       }
       
       // Update game state
@@ -608,21 +625,39 @@
         
         // Add easy mode toggle option - always available
         const easyModeOption = document.createElement('div');
-        easyModeOption.textContent = 'Easy Mode: ' + (easyModeActive ? 'Off' : 'On');
-        easyModeOption.classList.add('power-option');
-        easyModeOption.onclick = function() {
-          toggleEasyMode();
-        };
+        easyModeOption.style.padding = '8px';
+        easyModeOption.style.margin = '5px 0';
+        easyModeOption.style.border = '1px solid #ddd';
+        easyModeOption.style.borderRadius = '4px';
+        easyModeOption.style.cursor = 'pointer';
+        
+        easyModeOption.innerHTML = `<strong>Easy Mode (${easyModeActive ? 'ON' : 'OFF'})</strong>: Makes the game easier but fewer points.`;
+        
+        easyModeOption.addEventListener('click', function() {
+          const result = toggleEasyMode();
+          showMessage(result);
+          closePowerMenu();
+        });
+        
         powerOptions.appendChild(easyModeOption);
         
         // Add power options
         powerUps.forEach(powerUp => {
           const option = document.createElement('div');
-          option.textContent = powerUp.name;
-          option.classList.add('power-option');
-          option.onclick = function() {
-            showMessage(powerUp.effect());
-          };
+          option.style.padding = '8px';
+          option.style.margin = '5px 0';
+          option.style.border = '1px solid #ddd';
+          option.style.borderRadius = '4px';
+          option.style.cursor = 'pointer';
+          
+          option.innerHTML = `<strong>${powerUp.name}</strong>: ${powerUp.description}`;
+          
+          option.addEventListener('click', function() {
+            const result = powerUp.effect();
+            showMessage(result);
+            closePowerMenu();
+          });
+          
           powerOptions.appendChild(option);
         });
         
@@ -630,10 +665,17 @@
         cancelAnimationFrame(animationFrameId);
       }
       
-      // Function to close the power menu
+      // Function to close the power menu - fix obstacle scheduling issue
       function closePowerMenu() {
         isPaused = false;
         powerMenu.style.display = 'none';
+        
+        // Ensure obstacles continue to be generated
+        ensureObstacleGeneration();
+        
+        // Reset the last frame time to avoid sudden jumps
+        lastFrameTime = Date.now();
+        
         if (!isGameOver) {
           animationFrameId = requestAnimationFrame(gameLoop);
         }
@@ -699,10 +741,14 @@
         startButton.style.display = 'inline-block';
       }
       
-      // Helper function to ensure obstacles keep coming
+      // Fix the ensureObstacleGeneration function to be more robust
       function ensureObstacleGeneration() {
         const timeSinceLastObstacle = Date.now() - lastObstacleTime;
-        if (timeSinceLastObstacle > 2000 || obstacles.length === 0) {
+        
+        // If it's been a long time since the last obstacle or there are none
+        if ((timeSinceLastObstacle > 2000 && obstacles.length === 0) || obstacles.length === 0) {
+          console.log("Ensuring obstacles continue to generate");
+          lastObstacleTime = Date.now();
           scheduleNextObstacle();
         }
       }
@@ -841,57 +887,38 @@
         }
       });
       
-      // Get pause button element
-      // const pauseButton = document.getElementById('pause-button');
-      
-      // Add direct onclick property for maximum compatibility
-      pauseButton.onclick = function(e) {
-        console.log("Pause button clicked");
+      // Replace it with proper event handlers after initGame()
+      // Make sure pause button works with both click and touch events
+      pauseButton.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
+        console.log("Pause button clicked via addEventListener");
         if (!isGameOver) {
           openPowerMenu();
         }
-        return false;
-      };
+      });
       
-      // Custom function for mobile touch handling
-      pauseButton.pauseClicked = function(e) {
-        console.log("Pause button touched");
+      // Add touch event specifically for mobile
+      pauseButton.addEventListener('touchstart', function(e) {
         e.preventDefault();
         e.stopPropagation();
+        console.log("Pause button touched via touchstart");
         if (!isGameOver) {
           openPowerMenu();
         }
-        return false;
-      };
+      }, { passive: false });
       
       // Initialize variables needed by gameLoop
       let lastFrameTime = Date.now();
       
       // Initialize the game
       function initGame() {
-        // ... existing initialization ...
-        
         // Set up event listeners
-        document.addEventListener('keydown', handleKeyDown);
         restartButton.addEventListener('click', startGame);
         startButton.addEventListener('click', startGame);
         
-        // Mobile touch support
-        gameContainer.addEventListener('touchstart', function(e) {
-          // Don't jump if tapping the pause button or power menu
-          if (e.target === pauseButton || powerMenu.contains(e.target)) {
-            return;
-          }
-          
-          e.preventDefault(); // Prevent scrolling
-          if (!isGameOver && !isPaused) {
-            jump();
-          } else if (isGameOver) {
-            startGame();
-          }
-        }, { passive: false });
+        // No need to add duplicate event listeners for keyboard/touch 
+        // as they're already set up earlier in the code
       }
       
       initGame(); // Call initialization at the end
