@@ -6,27 +6,30 @@
   <title>Game - Silicon Sutras</title>
   <style>
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+      font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
       line-height: 1.6;
       color: #333;
       max-width: 800px;
       margin: 0 auto;
       padding: 20px;
-      background-color: #f5f5f5;
+      background-color: #0b0f13;
+      color: #e0e6eb;
     }
     
     .game-wrapper {
-      background-color: #f8f9fa;
+      background-color: #121920;
       padding: 20px;
       border-radius: 12px;
       margin: 20px 0;
-      font-family: monospace;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      font-family: 'Courier New', monospace;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+      border: 1px solid #2a3f50;
     }
     
     h1, h2 {
       text-align: center;
-      color: #444;
+      color: #73e8ca;
+      letter-spacing: 1px;
     }
     
     h1 {
@@ -41,7 +44,19 @@
       max-width: 600px;
       margin-left: auto;
       margin-right: auto;
-      color: #666;
+      color: #8da9c4;
+    }
+    
+    .header-quote a {
+      color: #73e8ca;
+      text-decoration: none;
+      border-bottom: 1px solid #4db6ac;
+      transition: all 0.3s;
+    }
+    
+    .header-quote a:hover {
+      color: #4eecb9;
+      border-bottom: 1px solid #4eecb9;
     }
     
     #game-container {
@@ -51,10 +66,10 @@
       margin: 0 auto;
       position: relative;
       overflow: hidden;
-      background-color: #f0f0f0;
-      border: 2px solid #ddd;
+      background-color: #0d151e;
+      border: 2px solid #2a3f50;
       border-radius: 8px;
-      box-shadow: inset 0 2px 10px rgba(0,0,0,0.05);
+      box-shadow: inset 0 0 30px rgba(55, 200, 150, 0.07);
     }
     
     #player {
@@ -68,6 +83,7 @@
       text-align: center;
       z-index: 10;
       transition: transform 0.3s;
+      filter: drop-shadow(0 0 8px rgba(73, 232, 202, 0.5));
     }
     
     #ground {
@@ -75,56 +91,63 @@
       bottom: 0;
       width: 100%;
       height: 20px;
-      background: linear-gradient(to right, #333, #444);
+      background: linear-gradient(to right, #1f2933, #3e5c76);
     }
     
     .obstacle {
       transition: opacity 0.3s;
+      filter: drop-shadow(0 0 5px rgba(247, 160, 64, 0.4));
     }
     
     .footer {
       text-align: center;
       margin-top: 40px;
       font-size: 14px;
-      color: #666;
+      color: #7f97ad;
     }
     
     .footer a {
-      color: #555;
+      color: #73e8ca;
       text-decoration: none;
-      border-bottom: 1px solid #999;
+      border-bottom: 1px solid #4db6ac;
       transition: all 0.2s;
     }
     
     .footer a:hover {
-      color: #333;
-      border-bottom: 2px solid #666;
+      color: #4eecb9;
+      border-bottom: 1px solid #4eecb9;
     }
     
     .instructions {
       text-align: center;
       margin: 20px 0;
-      background-color: rgba(255,255,255,0.7);
+      background-color: rgba(30, 46, 62, 0.7);
       padding: 10px;
       border-radius: 8px;
+      border: 1px solid #2a3f50;
     }
     
     #start-button, #restart-button {
       padding: 10px 20px;
       margin: 10px auto;
-      background-color: #4285f4;
+      background-color: #3da5b5;
       color: white;
       border: none;
       border-radius: 5px;
       cursor: pointer;
       display: block;
       font-weight: bold;
-      transition: background-color 0.2s;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      transition: all 0.3s;
+      box-shadow: 0 2px 8px rgba(61, 165, 181, 0.3);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-size: 0.9em;
     }
     
     #start-button:hover, #restart-button:hover {
-      background-color: #3367d6;
+      background-color: #49c5d5;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(61, 165, 181, 0.4);
     }
     
     #power-menu {
@@ -133,25 +156,32 @@
       top: 50%; 
       left: 50%; 
       transform: translate(-50%, -50%); 
-      background: white; 
-      border: 2px solid #4285f4; 
+      background: #121920; 
+      border: 2px solid #3da5b5; 
       padding: 15px; 
       border-radius: 8px; 
       z-index: 101;
       max-width: 80%;
       max-height: 80%;
       overflow-y: auto;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 15px rgba(73, 232, 202, 0.2);
+      color: #e0e6eb;
     }
     
     #power-options div {
-      transition: all 0.2s;
+      transition: all 0.3s;
       margin-bottom: 8px;
+      border: 1px solid #2a3f50;
+      border-radius: 4px;
+      padding: 8px;
+      background-color: rgba(30, 46, 62, 0.7);
     }
     
     #power-options div:hover {
-      background-color: #f0f7ff;
+      background-color: #1e3a50;
       transform: translateX(3px);
+      border-color: #3da5b5;
+      box-shadow: 0 0 10px rgba(73, 232, 202, 0.2);
     }
     
     #score-container {
@@ -160,10 +190,13 @@
       right: 10px;
       font-size: 18px;
       z-index: 10;
-      background: rgba(255,255,255,0.8);
+      background: rgba(18, 25, 32, 0.8);
       padding: 5px 10px;
       border-radius: 5px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      border: 1px solid #2a3f50;
+      color: #73e8ca;
+      font-family: 'Courier New', monospace;
     }
     
     #game-over {
@@ -173,13 +206,21 @@
       left: 50%;
       transform: translate(-50%, -50%);
       text-align: center;
-      background: rgba(255,255,255,0.95);
+      background: rgba(18, 25, 32, 0.95);
       padding: 20px;
       border-radius: 8px;
       z-index: 20;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-      border: 2px solid #ddd;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 15px rgba(73, 232, 202, 0.2);
+      border: 2px solid #3da5b5;
       min-width: 60%;
+      color: #e0e6eb;
+    }
+    
+    #game-over-text {
+      color: #73e8ca;
+      letter-spacing: 2px;
+      font-size: 1.5em;
+      margin-top: 0;
     }
     
     /* Pause button for mobile users */
@@ -189,19 +230,30 @@
       left: 10px;
       width: 40px;
       height: 40px;
-      background-color: rgba(255, 255, 255, 0.9);
+      background-color: rgba(18, 25, 32, 0.9);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 22px;
-      z-index: 100; /* Ensure it's above everything */
+      z-index: 100;
       cursor: pointer;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
       user-select: none;
       -webkit-tap-highlight-color: transparent;
-      touch-action: manipulation; /* Prevent double-tap zooming */
-      border: 2px solid #4285f4;
+      touch-action: manipulation;
+      border: 2px solid #3da5b5;
+      transition: all 0.3s;
+    }
+    
+    #pause-button:hover {
+      background-color: #1e3a50;
+      border-color: #73e8ca;
+      box-shadow: 0 0 10px rgba(73, 232, 202, 0.3);
+    }
+    
+    .bg-element {
+      pointer-events: none;
     }
   </style>
 </head>
@@ -227,7 +279,7 @@
         <button id="restart-button">Run Again</button>
       </div>
       
-      <div id="player">🤔</div>
+      <div id="player">👾</div>
       
       <div id="ground"></div>
       
@@ -377,6 +429,9 @@
       function startGame() {
         resetGame();
         
+        // Add cyber elements to the background
+        addBackgroundElements();
+        
         // Start game loop with requestAnimationFrame
         lastFrameTime = Date.now();
         gameLoop();
@@ -504,7 +559,11 @@
         // Create obstacle element
         const obstacle = document.createElement('div');
         obstacle.classList.add('obstacle');
-        const obstacleType = Math.random() > 0.7 ? '📊' : '🔒';
+        
+        // Create futuristic solarpunk-themed obstacles
+        const obstacleTypes = ['🌐', '🔷', '👁️', '🧠', '🔋'];
+        const obstacleType = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
+        
         obstacle.textContent = obstacleType;
         obstacle.style.position = 'absolute';
         obstacle.style.right = '0';
@@ -513,7 +572,6 @@
         obstacle.style.height = `${settings.obstacleHeight}px`;
         obstacle.style.fontSize = '20px';
         obstacle.style.textAlign = 'center';
-        obstacle.style.filter = 'drop-shadow(0 2px 2px rgba(0,0,0,0.2))';
         
         gameContainer.appendChild(obstacle);
         
@@ -689,17 +747,26 @@
         message.style.top = '50%';
         message.style.left = '50%';
         message.style.transform = 'translate(-50%, -50%)';
-        message.style.background = 'rgba(255,255,255,0.9)';
+        message.style.background = 'rgba(18, 25, 32, 0.9)';
+        message.style.color = '#73e8ca';
         message.style.padding = '12px 15px';
         message.style.borderRadius = '8px';
         message.style.zIndex = '15';
-        message.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
-        message.style.border = '1px solid #ddd';
+        message.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.4), 0 0 10px rgba(73, 232, 202, 0.3)';
+        message.style.border = '1px solid #3da5b5';
+        message.style.fontFamily = "'Courier New', monospace";
+        
         gameContainer.appendChild(message);
         
+        // Add a fade-out animation
+        message.style.transition = 'opacity 0.5s ease-out';
+        
         setTimeout(() => {
-          message.remove();
-        }, settings.powerDisplayDuration);
+          message.style.opacity = '0';
+          setTimeout(() => {
+            message.remove();
+          }, 500);
+        }, settings.powerDisplayDuration - 500);
       }
       
       // End the game
@@ -919,6 +986,42 @@
         
         // No need to add duplicate event listeners for keyboard/touch 
         // as they're already set up earlier in the code
+      }
+      
+      // Create background elements for futuristic feel
+      function addBackgroundElements() {
+        // Remove any existing background elements
+        const existingElements = document.querySelectorAll('.bg-element');
+        existingElements.forEach(el => el.remove());
+        
+        // Create 5-10 random background elements
+        const numElements = Math.floor(Math.random() * 6) + 5;
+        
+        for (let i = 0; i < numElements; i++) {
+          const element = document.createElement('div');
+          element.classList.add('bg-element');
+          
+          // Random position
+          const top = Math.random() * 80 + 10; // 10-90%
+          const left = Math.random() * 80 + 10; // 10-90%
+          
+          // Random size
+          const size = Math.random() * 30 + 10; // 10-40px
+          
+          // Style the element
+          element.style.position = 'absolute';
+          element.style.top = `${top}%`;
+          element.style.left = `${left}%`;
+          element.style.width = `${size}px`;
+          element.style.height = `${size}px`;
+          element.style.background = 'transparent';
+          element.style.border = `1px solid rgba(73, 232, 202, ${Math.random() * 0.2 + 0.1})`;
+          element.style.borderRadius = Math.random() > 0.5 ? '50%' : '3px';
+          element.style.zIndex = '5';
+          element.style.opacity = Math.random() * 0.5 + 0.1;
+          
+          gameContainer.appendChild(element);
+        }
       }
       
       initGame(); // Call initialization at the end
