@@ -186,23 +186,21 @@
       position: absolute;
       top: 10px;
       left: 10px;
-      width: 36px;
-      height: 36px;
-      background-color: rgba(255, 255, 255, 0.7);
+      width: 40px;
+      height: 40px;
+      background-color: rgba(255, 255, 255, 0.9);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 18px;
-      z-index: 20;
+      font-size: 22px;
+      z-index: 100; /* Ensure it's above everything */
       cursor: pointer;
       box-shadow: 0 2px 4px rgba(0,0,0,0.2);
       user-select: none;
       -webkit-tap-highlight-color: transparent;
-    }
-    
-    #pause-button:hover {
-      background-color: rgba(255, 255, 255, 0.9);
+      touch-action: manipulation; /* Prevent double-tap zooming */
+      border: 2px solid #4285f4;
     }
   </style>
 </head>
@@ -219,7 +217,7 @@
       </div>
       
       <!-- Pause button for mobile users -->
-      <div id="pause-button">⚙️</div>
+      <div id="pause-button" ontouchstart="this.pauseClicked(event)">⚙️</div>
       
       <div id="game-over">
         <h3 id="game-over-text">GAME OVER</h3>
@@ -601,86 +599,43 @@
       
       // Open power menu
       function openPowerMenu() {
+        console.log("Opening power menu");
+        isPaused = true;
+        powerMenu.style.display = 'block';
+        
+        // Clear previous options
+        powerOptions.innerHTML = '';
+        
+        // Add easy mode toggle option - always available
+        const easyModeOption = document.createElement('div');
+        easyModeOption.textContent = 'Easy Mode: ' + (easyModeActive ? 'Off' : 'On');
+        easyModeOption.classList.add('power-option');
+        easyModeOption.onclick = function() {
+          toggleEasyMode();
+        };
+        powerOptions.appendChild(easyModeOption);
+        
+        // Add power options
+        powerUps.forEach(powerUp => {
+          const option = document.createElement('div');
+          option.textContent = powerUp.name;
+          option.classList.add('power-option');
+          option.onclick = function() {
+            showMessage(powerUp.effect());
+          };
+          powerOptions.appendChild(option);
+        });
+        
+        // Cancel animation frame to properly pause the game
+        cancelAnimationFrame(animationFrameId);
+      }
+      
+      // Function to close the power menu
+      function closePowerMenu() {
+        isPaused = false;
+        powerMenu.style.display = 'none';
         if (!isGameOver) {
-          isPaused = true;
-          powerMenu.style.display = 'block';
-          
-          // Clear previous options
-          powerOptions.innerHTML = '';
-          
-          // Add easy mode toggle option - always available
-          const easyModeOption = document.createElement('div');
-          easyModeOption.style.padding = '8px';
-          easyModeOption.style.margin = '5px 0';
-          easyModeOption.style.border = '1px solid #ddd';
-          easyModeOption.style.borderRadius = '4px';
-          easyModeOption.style.cursor = 'pointer';
-          easyModeOption.style.backgroundColor = easyModeActive ? '#e8f5e9' : '';
-          
-          const easyModeStatus = easyModeActive ? 'ON' : 'OFF';
-          easyModeOption.innerHTML = `<strong>Easy Mode (${easyModeStatus})</strong>: Make the game easier but earn fewer points.`;
-          
-          easyModeOption.addEventListener('click', () => {
-            const result = toggleEasyMode();
-            
-            // Close menu and resume game
-            powerMenu.style.display = 'none';
-            isPaused = false;
-            
-            // Show effect message
-            showMessage(result);
-            
-            // Ensure obstacle generation continues
-            ensureObstacleGeneration();
-            
-            // Resume game loop
-            lastFrameTime = Date.now(); // Reset time delta
-            gameLoop();
-          });
-          
-          powerOptions.appendChild(easyModeOption);
-          
-          // Add a separator
-          const separator = document.createElement('div');
-          separator.style.height = '1px';
-          separator.style.backgroundColor = '#ddd';
-          separator.style.margin = '10px 0';
-          powerOptions.appendChild(separator);
-          
-          // Create power options
-          powerUps.forEach(power => {
-            const option = document.createElement('div');
-            option.style.padding = '8px';
-            option.style.margin = '5px 0';
-            option.style.border = '1px solid #ddd';
-            option.style.borderRadius = '4px';
-            option.style.cursor = 'pointer';
-            
-            option.innerHTML = `<strong>${power.name}</strong>: ${power.description}`;
-            
-            option.addEventListener('click', () => {
-              const result = power.effect();
-              
-              // Close menu and resume game
-              powerMenu.style.display = 'none';
-              isPaused = false;
-              
-              // Set cooldown
-              powerCooldown = settings.powerCooldownDuration;
-              
-              // Show effect message
-              showMessage(result);
-              
-              // Ensure obstacle generation continues
-              ensureObstacleGeneration();
-              
-              // Resume game loop
-              lastFrameTime = Date.now(); // Reset time delta
-              gameLoop();
-            });
-            
-            powerOptions.appendChild(option);
-          });
+          animationFrameId = requestAnimationFrame(gameLoop);
         }
       }
       
@@ -750,19 +705,6 @@
         if (timeSinceLastObstacle > 2000 || obstacles.length === 0) {
           scheduleNextObstacle();
         }
-      }
-      
-      // Helper function to resume game from pause
-      function resumeGameFromPause() {
-        powerMenu.style.display = 'none';
-        isPaused = false;
-        
-        // Ensure obstacle generation continues
-        ensureObstacleGeneration();
-        
-        // Reset time delta for smooth animation
-        lastFrameTime = Date.now();
-        gameLoop();
       }
       
       // Start difficulty progression
@@ -854,17 +796,12 @@
         }
       });
       
-      // Cancel power menu with Escape key
-      document.addEventListener('keydown', function(event) {
-        if (event.code === 'Escape' && isPaused) {
-          resumeGameFromPause();
-        }
-      });
-      
       // Mobile touch support
       gameContainer.addEventListener('touchstart', function(e) {
-        // Don't jump if tapping the pause button
-        if (e.target === pauseButton) return;
+        // Don't jump if tapping the pause button or power menu
+        if (e.target === pauseButton || powerMenu.contains(e.target)) {
+          return;
+        }
         
         e.preventDefault(); // Prevent scrolling
         if (!isGameOver && !isPaused) {
@@ -873,11 +810,6 @@
           startGame();
         }
       }, { passive: false });
-      
-      // Prevent game container from handling touch events if power menu is open
-      powerMenu.addEventListener('touchstart', function(e) {
-        e.stopPropagation();
-      });
       
       // Restart button
       restartButton.addEventListener('click', function() {
@@ -892,7 +824,7 @@
       // Add a way to close power menu by touching outside it
       document.addEventListener('click', function(e) {
         if (isPaused && !powerMenu.contains(e.target) && e.target !== powerMenu) {
-          resumeGameFromPause();
+          closePowerMenu();
         }
       });
       
@@ -905,19 +837,64 @@
       
       window.addEventListener('focus', function() {
         if (!isGameOver && isPaused && powerMenu.style.display === 'none') {
-          resumeGameFromPause();
+          closePowerMenu();
         }
       });
       
-      // Pause button event listener for mobile users
-      pauseButton.addEventListener('click', function() {
+      // Get pause button element
+      // const pauseButton = document.getElementById('pause-button');
+      
+      // Add direct onclick property for maximum compatibility
+      pauseButton.onclick = function(e) {
+        console.log("Pause button clicked");
+        e.preventDefault();
+        e.stopPropagation();
         if (!isGameOver) {
           openPowerMenu();
         }
-      });
+        return false;
+      };
+      
+      // Custom function for mobile touch handling
+      pauseButton.pauseClicked = function(e) {
+        console.log("Pause button touched");
+        e.preventDefault();
+        e.stopPropagation();
+        if (!isGameOver) {
+          openPowerMenu();
+        }
+        return false;
+      };
       
       // Initialize variables needed by gameLoop
       let lastFrameTime = Date.now();
+      
+      // Initialize the game
+      function initGame() {
+        // ... existing initialization ...
+        
+        // Set up event listeners
+        document.addEventListener('keydown', handleKeyDown);
+        restartButton.addEventListener('click', startGame);
+        startButton.addEventListener('click', startGame);
+        
+        // Mobile touch support
+        gameContainer.addEventListener('touchstart', function(e) {
+          // Don't jump if tapping the pause button or power menu
+          if (e.target === pauseButton || powerMenu.contains(e.target)) {
+            return;
+          }
+          
+          e.preventDefault(); // Prevent scrolling
+          if (!isGameOver && !isPaused) {
+            jump();
+          } else if (isGameOver) {
+            startGame();
+          }
+        }, { passive: false });
+      }
+      
+      initGame(); // Call initialization at the end
     });
   </script>
 </body>
