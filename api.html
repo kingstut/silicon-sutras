@@ -180,6 +180,30 @@
       border: 2px solid #ddd;
       min-width: 60%;
     }
+    
+    /* Pause button for mobile users */
+    #pause-button {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      width: 36px;
+      height: 36px;
+      background-color: rgba(255, 255, 255, 0.7);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      z-index: 20;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    #pause-button:hover {
+      background-color: rgba(255, 255, 255, 0.9);
+    }
   </style>
 </head>
 <body>
@@ -193,6 +217,9 @@
         <div>Points: <span id="score">0</span></div>
         <div id="humanity-score" style="display: none;">Another Kind of Points: <span id="human-points">0</span></div>
       </div>
+      
+      <!-- Pause button for mobile users -->
+      <div id="pause-button">⚙️</div>
       
       <div id="game-over">
         <h3 id="game-over-text">GAME OVER</h3>
@@ -212,7 +239,7 @@
     </div>
     
     <div class="instructions">
-      <p>Press SPACE to jump, P to pause and question the system</p>
+      <p>Press SPACE to jump, P or tap ⚙️ to pause and access special abilities</p>
       <button id="start-button">Start Game</button>
     </div>
   </div>
@@ -236,6 +263,7 @@
       const startButton = document.getElementById('start-button');
       const powerMenu = document.getElementById('power-menu');
       const powerOptions = document.getElementById('power-options');
+      const pauseButton = document.getElementById('pause-button');
       
       // Game state variables
       let score = 0;
@@ -835,6 +863,9 @@
       
       // Mobile touch support
       gameContainer.addEventListener('touchstart', function(e) {
+        // Don't jump if tapping the pause button
+        if (e.target === pauseButton) return;
+        
         e.preventDefault(); // Prevent scrolling
         if (!isGameOver && !isPaused) {
           jump();
@@ -875,6 +906,13 @@
       window.addEventListener('focus', function() {
         if (!isGameOver && isPaused && powerMenu.style.display === 'none') {
           resumeGameFromPause();
+        }
+      });
+      
+      // Pause button event listener for mobile users
+      pauseButton.addEventListener('click', function() {
+        if (!isGameOver) {
+          openPowerMenu();
         }
       });
       
